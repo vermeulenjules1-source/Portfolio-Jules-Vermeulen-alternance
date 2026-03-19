@@ -27,7 +27,7 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 .nav-cta { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bg); background: var(--accent); padding: 0.5rem 1.25rem; border-radius: 2px; text-decoration: none; }
 
 #hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 8rem 5vw 4rem; gap: 4rem; position: relative; overflow: hidden; }
-.hero-grid-bg { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; opacity: 0.5; }
+
 .hero-tag { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); border: 0.5px solid rgba(0,229,195,0.3); padding: 0.35rem 0.9rem; border-radius: 2px; margin-bottom: 2rem; }
 .hero-tag::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
 .hero-name { font-size: clamp(3.5rem, 7vw, 6rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
@@ -135,7 +135,7 @@ footer { border-top: 0.5px solid var(--border); padding: 2rem 5vw; display: flex
 </nav>
 
 <section id="hero">
-  <div class="hero-grid-bg"></div>
+  <canvas id="bgCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
   <div class="hero-left">
     <img src="photo.jpg" alt="Jules Vermeulen" class="hero-photo">
     <div class="hero-tag">Disponible dès sept. 2026</div>
@@ -371,5 +371,71 @@ footer { border-top: 0.5px solid var(--border); padding: 2rem 5vw; display: flex
   <span class="footer-logo">Jules<span>.</span></span>
 </footer>
 
+
+<script>
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resize() {
+  W = canvas.width = canvas.offsetWidth;
+  H = canvas.height = canvas.offsetHeight;
+}
+
+function Particle() {
+  this.x = Math.random() * W;
+  this.y = Math.random() * H;
+  this.vx = (Math.random() - 0.5) * 0.4;
+  this.vy = (Math.random() - 0.5) * 0.4;
+  this.r = Math.random() * 1.5 + 0.5;
+  this.alpha = Math.random() * 0.5 + 0.1;
+}
+
+function init() {
+  resize();
+  particles = [];
+  for (let i = 0; i < 90; i++) particles.push(new Particle());
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  
+  // Draw connections
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(0,229,195,' + (0.12 * (1 - dist/120)) + ')';
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw dots
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,229,195,' + p.alpha + ')';
+    ctx.fill();
+
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  });
+
+  requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', init);
+init();
+draw();
+</script>
 </body>
 </html>
